@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>Air Health · 健康数据面板</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .sleep-history-panel{margin-top:22px}.sleep-history-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:18px}.sleep-night{min-width:0;padding:14px 10px;border-radius:15px;background:#f5f7f5}.sleep-night b,.sleep-night small,.sleep-night span{display:block}.sleep-night b{font:500 19px Georgia,serif}.sleep-night small{margin-top:4px;color:#77857e}.sleep-night span{height:64px;margin:13px 0 8px;border-radius:7px;background:linear-gradient(to top,#8175df var(--sleep-fill),#e8e4fa var(--sleep-fill))}.sleep-night em{font-style:normal;font-size:10px;color:#526058}.report-ai-narrative{margin:18px 0 0;padding:22px 24px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.1)}.report-ai-narrative>h3{margin:5px 0 12px;font:500 23px Georgia,"Noto Serif SC",serif}.report-ai-narrative .ai-rich{color:#e3eee8}.ai-rich{font-size:13px;line-height:1.75}.ai-rich h3,.ai-rich h4{margin:20px 0 7px}.ai-rich h3{font-size:17px}.ai-rich h4{font-size:15px}.ai-rich p{margin:7px 0}.ai-rich ul,.ai-rich ol{margin:7px 0;padding-left:22px}.ai-rich li{margin:5px 0}.ai-rich strong{font-weight:800}body:not([data-view="sleep"]) .sleep-history-panel{display:none}body[data-view="overview"] .expanded-metrics,body[data-view="overview"] .data-sections,body[data-view="overview"] .correlation-panel,body[data-view="overview"] .quality-panel{display:none}@media(max-width:900px){.sleep-history-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:560px){.sleep-history-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.report-ai-narrative{padding:18px}}
+  </style>
+  <link rel="stylesheet" href="/static/mobile.css">
+</head>
+<body>
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Air Health 首页">
+        <span class="brand-mark"><i></i><i></i><i></i></span>
+        <span><b>Air Health</b><small>个人健康趋势中心</small></span>
+      </a>
+      <div class="top-actions">
+        <div class="sync-state"><span id="syncDot" class="dot"></span><span id="syncLabel">正在检查数据</span></div>
+        <a id="consentBtn" class="button button-primary compact hidden" href="/oauth/start">授权全部指标</a>
+        <button id="syncBtn" class="button button-ghost" type="button">同步数据</button>
+      </div>
+    </header>
+
+    <section id="setup" class="setup hidden">
+      <div class="setup-copy">
+        <p class="eyebrow">首次配置</p>
+        <h1>把 Fitbit Air 的数据<br>留在自己的服务器里</h1>
+        <p>输入 Google Cloud OAuth 凭据，随后完成一次 Google 授权。凭据与数据只保存在 health-server，首次配置请通过 SSH 隧道访问；公网入口必须另外启用登录保护。</p>
+        <ol>
+          <li><span>1</span>Google Cloud 中启用 Google Health API</li>
+          <li><span>2</span>创建“Web 应用”OAuth 客户端</li>
+          <li><span>3</span>将右侧回调地址加入 Authorized redirect URIs</li>
+        </ol>
+      </div>
+      <form id="setupForm" class="setup-card">
+        <label>OAuth Client ID<input name="client_id" required autocomplete="off" placeholder="…apps.googleusercontent.com"></label>
+        <label>OAuth Client Secret<input name="client_secret" required type="password" autocomplete="new-password" placeholder="GOCSPX-…"></label>
+        <label>Authorized redirect URI<div class="copy-row"><input id="redirectUri" name="redirect_uri" readonly value="http://localhost:8765/oauth/callback"><button id="copyRedirect" type="button">复制</button></div></label>
+        <label>首次回填范围<select name="historical_days"><option value="90">近 90 天</option><option value="365" selected>近 1 年</option><option value="730">近 2 年</option></select></label>
+        <p id="setupError" class="form-error"></p>
+        <button class="button button-primary wide" type="submit">保存并连接 Google</button>
+        <p class="form-note">仅申请只读权限：活动、健康指标、睡眠、营养、运动路线、个人资料、ECG 与心律通知。</p>
+      </form>
+    </section>
+
+    <section id="connect" class="connect hidden">
+      <div><p class="eyebrow">还差一步</p><h1>连接你的 Google Health 数据</h1><p>授权后会自动开始首次同步。Google 密码不会经过本服务。</p></div>
+      <a class="button button-primary" href="/oauth/start">连接 Google 账户</a>
+    </section>
+
+    <section id="dashboard" class="dashboard hidden">
+      <aside id="permissionBanner" class="permission-banner hidden">
+        <div><b>还有数据类型尚未授权</b><span>重新连接一次即可加入营养、GPS 运动路线、个人资料、ECG 和心律通知；不会申请任何写入权限。</span></div>
+        <a class="button button-primary" href="/oauth/start">补充只读授权</a>
+      </aside>
+      <nav class="section-nav" aria-label="健康数据模块">
+        <button class="active" data-view="overview" data-short="总览"><span>⌂</span>总览</button>
+        <button data-view="activity" data-short="活动"><span>↗</span>活动与训练</button>
+        <button data-view="sleep" data-short="睡眠"><span>☾</span>睡眠与恢复</button>
+        <button data-view="health" data-short="心脏"><span>♥</span>心脏与健康</button>
+        <button data-view="explore" data-short="趋势"><span>⌁</span>趋势探索</button>
+        <button data-view="report" data-short="周报"><span>▤</span>健康周报</button>
+        <button data-view="coach" data-short="AI"><span>✦</span>AI 分析</button>
+        <button data-view="assistant" data-short="助手"><span>◈</span>AI 助手</button>
+      </nav>
+      <div class="view-heading"><div><p class="eyebrow" id="viewEyebrow">CONTROL CENTER</p><h2 id="viewTitle">今日健康总览</h2></div><p id="viewDescription">从恢复、活动、睡眠与生命体征快速判断今天的状态。</p></div>
+      <div class="hero-row">
+        <div>
+          <p class="eyebrow" id="todayLabel">TODAY</p>
+          <h1>晚上好，今天感觉如何？</h1>
+          <p class="hero-sub">看趋势，不被单日波动牵着走。</p>
+        </div>
+        <div class="range-switch" role="group" aria-label="选择趋势范围">
+          <button data-days="7">7 天</button><button class="active" data-days="30">30 天</button><button data-days="90">90 天</button><button data-days="365">1 年</button>
+        </div>
+      </div>
+
+      <section class="metric-grid" aria-label="今日健康摘要">
+        <article class="metric-card accent-green"><div class="metric-head"><span class="metric-icon">↟</span><span>步数</span></div><strong id="stepsValue">—</strong><small id="stepsMeta">暂无数据</small><div id="stepsSpark" class="spark"></div></article>
+        <article class="metric-card accent-purple"><div class="metric-head"><span class="metric-icon">☾</span><span>睡眠</span></div><strong id="sleepValue">—</strong><small id="sleepMeta">暂无数据</small><div id="sleepSpark" class="spark"></div></article>
+        <article class="metric-card accent-red"><div class="metric-head"><span class="metric-icon">♥</span><span id="heartMetricLabel">当前心率</span></div><strong id="rhrValue">—</strong><small id="rhrMeta">暂无数据</small><div id="rhrSpark" class="spark"></div></article>
+        <article class="metric-card accent-blue"><div class="metric-head"><span class="metric-icon">⌁</span><span>HRV</span></div><strong id="hrvValue">—</strong><small id="hrvMeta">暂无数据</small><div id="hrvSpark" class="spark"></div></article>
+      </section>
+
+      <section id="dailyBriefModule" class="daily-brief-panel">
+        <header class="daily-brief-head"><div><p class="eyebrow">DAILY BRIEF</p><h2>今日健康简报</h2><p id="dailyBriefMeta">正在读取个人基线…</p></div><button id="dailyBriefGenerate" class="button button-ghost" type="button">✦ 生成 AI 今日解读</button></header>
+        <div class="daily-brief-summary">
+          <div id="dailyBriefScore" class="daily-score"><b>—</b><small>恢复参考</small></div>
+          <div><span id="dailyBriefLabel" class="daily-brief-label">建立基线中</span><h3 id="dailyBriefHeadline">正在整理今天的数据</h3><p id="dailyBriefSummary">每日简报会对比个人近期基线，不用通用人群标准替代你的历史趋势。</p></div>
+        </div>
+        <div id="dailyBriefMetrics" class="daily-brief-metrics"></div>
+        <div class="daily-brief-columns">
+          <article><div class="daily-column-head"><h3>趋势提醒</h3><span id="dailyAlertCount">—</span></div><div id="dailyAlerts" class="daily-alerts"></div></article>
+          <article><div class="daily-column-head"><h3>今天可以做什么</h3><span>按优先级</span></div><div id="dailyActions" class="daily-actions"></div></article>
+        </div>
+        <article id="dailyBriefAi" class="daily-brief-ai hidden"></article>
+        <p class="method-note">基于个人历史基线与数据新鲜度自动生成；不用于诊断、疾病筛查或运动处方。</p>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel trend-panel">
+          <div class="panel-head"><div><p class="eyebrow">ACTIVITY</p><h2>活动趋势</h2></div><div class="legend"><span class="legend-green">步数</span><span class="legend-violet">活跃区间</span></div></div>
+          <div id="activityChart" class="chart-large" aria-label="活动趋势折线图"></div>
+          <div class="chart-foot"><span id="activityAverage">—</span><span id="activityCoverage">—</span></div>
+        </article>
+        <article class="panel device-panel">
+          <div class="panel-head"><div><p class="eyebrow">DEVICE</p><h2>设备状态</h2></div><span id="deviceBadge" class="badge">未连接</span></div>
+          <div class="watch-wrap"><div class="watch"><div class="watch-screen"><span id="batteryValue">—</span><small>电量</small></div></div></div>
+          <h3 id="deviceName">Fitbit Air</h3><p id="deviceSync">等待设备信息</p>
+          <div class="device-stats"><span><small>状态</small><b id="batteryStatus">—</b></span><span><small>数据覆盖</small><b id="coverageValue">—</b></span></div>
+        </article>
+      </section>
+
+      <section class="content-grid lower">
+        <article class="panel sleep-panel">
+          <div class="panel-head"><div><p class="eyebrow">SLEEP</p><h2>睡眠结构</h2></div><span id="sleepRangeLabel" class="muted">最近一晚</span></div>
+          <div class="sleep-body"><div id="sleepDonut" class="donut"><div><b id="sleepTotal">—</b><small>总睡眠</small></div></div><div id="sleepLegend" class="sleep-legend"></div></div>
+        </article>
+        <article class="panel insights-panel">
+          <div class="panel-head"><div><p class="eyebrow">INSIGHTS</p><h2>近期观察</h2></div><span class="ai-mark">趋势</span></div>
+          <div id="insights" class="insights"></div>
+        </article>
+      </section>
+
+      <section class="panel sleep-history-panel">
+        <div class="panel-head"><div><p class="eyebrow">SLEEP HISTORY</p><h2>近期睡眠记录</h2></div><span id="sleepHistorySummary" class="muted">—</span></div>
+        <div id="sleepHistoryGrid" class="sleep-history-grid"></div>
+      </section>
+
+      <section class="content-grid intelligence-grid">
+        <article class="panel recovery-panel">
+          <div class="panel-head"><div><p class="eyebrow">RECOVERY</p><h2>今日恢复度</h2></div><span id="recoveryBadge" class="badge">建立基线中</span></div>
+          <div class="recovery-body"><div id="recoveryRing" class="score-ring"><div><b id="recoveryScore">—</b><small>/ 100</small></div></div><div><h3 id="recoveryLabel">等待足够数据</h3><p id="recoverySummary">恢复度根据个人基线计算。</p></div></div>
+          <div id="recoveryDrivers" class="driver-list"></div>
+          <p class="method-note">非医疗指标，仅用于个人趋势参考。</p>
+        </article>
+        <article class="panel load-panel">
+          <div class="panel-head"><div><p class="eyebrow">TRAINING LOAD</p><h2>训练负荷</h2></div><span id="trainingBadge" class="badge">—</span></div>
+          <div class="load-values"><div><small>近 7 天</small><b id="acuteLoad">—</b></div><div><small>近 28 天</small><b id="chronicLoad">—</b></div><div><small>负荷比</small><b id="loadRatio">—</b></div><div><small>单调度</small><b id="monotonyValue">—</b></div></div>
+          <div id="loadChart" class="mini-chart"></div>
+          <p class="method-note">相对负荷指数用于观察变化速度，不代表受伤风险预测。</p>
+        </article>
+      </section>
+
+      <section class="content-grid lower intelligence-grid">
+        <article class="panel correlation-panel">
+          <div class="panel-head"><div><p class="eyebrow">COMPARE</p><h2>指标关联</h2></div><span class="muted">最多 90 天</span></div>
+          <div id="correlationList" class="correlation-list"></div>
+          <p class="method-note">相关性不等于因果关系；样本较少时仅供探索。</p>
+        </article>
+        <article class="panel quality-panel">
+          <div class="panel-head"><div><p class="eyebrow">DATA QUALITY</p><h2>数据新鲜度</h2></div><span id="qualityBadge" class="badge">—</span></div>
+          <p id="qualitySummary" class="quality-summary">正在检查同步质量…</p>
+          <div id="qualityChecks" class="quality-checks"></div>
+        </article>
+      </section>
+
+      <section class="panel vitals-panel">
+        <div class="panel-head"><div><p class="eyebrow">VITALS</p><h2>夜间健康指标</h2></div><span class="muted">近 30 天平均</span></div>
+        <div class="vitals-grid">
+          <div><span>血氧</span><b id="spo2Value">—</b><small>% 平均</small></div>
+          <div><span>呼吸率</span><b id="respValue">—</b><small>次 / 分</small></div>
+          <div><span>皮温偏差</span><b id="tempValue">—</b><small>°C</small></div>
+          <div><span>活动热量</span><b id="calorieValue">—</b><small>kcal / 日</small></div>
+        </div>
+      </section>
+
+      <section class="panel vitals-panel expanded-metrics">
+        <div class="panel-head"><div><p class="eyebrow">KEY METRICS</p><h2>活动、身体与营养</h2></div><span class="muted">当前所选范围</span></div>
+        <div class="key-grid">
+          <div><span>距离</span><b id="distanceValue">—</b><small>公里 / 日</small></div>
+          <div><span>心率区间覆盖</span><b id="zoneValue">—</b><small>分钟 / 日</small></div>
+          <div><span>总热量</span><b id="totalCalorieValue">—</b><small>kcal / 日</small></div>
+          <div><span>楼层</span><b id="floorsValue">—</b><small>层 / 日</small></div>
+          <div><span>体重</span><b id="weightValue">—</b><small>kg</small></div>
+          <div><span>体脂</span><b id="bodyFatValue">—</b><small>%</small></div>
+          <div><span>VO₂ Max</span><b id="vo2Value">—</b><small>ml/kg/min</small></div>
+          <div><span>核心体温</span><b id="coreTempValue">—</b><small>°C</small></div>
+          <div><span>饮水</span><b id="waterValue">—</b><small>毫升 / 日</small></div>
+          <div><span>摄入热量</span><b id="nutritionValue">—</b><small>kcal / 日</small></div>
+          <div><span>血糖</span><b id="bloodGlucoseValue">—</b><small>mg/dL</small></div>
+          <div><span>久坐</span><b id="sedentaryValue">—</b><small>分钟 / 日</small></div>
+        </div>
+      </section>
+
+      <section class="content-grid lower data-sections">
+        <article class="panel workouts-panel">
+          <div class="panel-head"><div><p class="eyebrow">WORKOUTS</p><h2>健身运动</h2></div><span id="workoutCount" class="muted">—</span></div>
+          <div id="workoutList" class="workout-list"></div>
+        </article>
+        <article class="panel catalog-panel">
+          <div class="panel-head"><div><p class="eyebrow">DATA COVERAGE</p><h2>可访问数据目录</h2></div><span id="catalogSummary" class="muted">—</span></div>
+          <div id="dataCatalog" class="data-catalog"></div>
+        </article>
+      </section>
+
+      <section id="trainingVisuals" class="training-visuals">
+        <div class="training-section-head"><div><p class="eyebrow">TRAINING ANALYTICS</p><h2>训练可视化分析</h2></div><span id="trainingVisualPeriod" class="muted">当前所选范围</span></div>
+        <div id="trainingKpis" class="training-kpis"></div>
+        <div class="training-chart-grid">
+          <article class="panel training-chart-panel volume-chart-panel">
+            <div class="panel-head"><div><p class="eyebrow">VOLUME &amp; ENERGY</p><h2>训练量与热量趋势</h2></div><span id="trainingVolumeMeta" class="muted">—</span></div>
+            <div id="trainingVolumeChart" class="training-svg-chart"></div>
+            <div class="chart-legend"><span style="--legend:#62bf8f">运动时长</span><span style="--legend:#e7a95d">消耗热量</span></div>
+          </article>
+          <article class="panel training-chart-panel mix-chart-panel">
+            <div class="panel-head"><div><p class="eyebrow">WORKOUT MIX</p><h2>运动结构</h2></div><span id="trainingMixMeta" class="muted">按时长</span></div>
+            <div class="donut-analysis"><div id="trainingMixDonut" class="analytics-donut"><div><b id="trainingMixTotal">—</b><small>总时长</small></div></div><div id="trainingMixLegend" class="analytics-legend"></div></div>
+          </article>
+          <article class="panel training-chart-panel zone-chart-panel">
+            <div class="panel-head"><div><p class="eyebrow">INTENSITY</p><h2>心率强度构成</h2></div><span id="trainingZoneMeta" class="muted">—</span></div>
+            <div class="donut-analysis"><div id="trainingZoneDonut" class="analytics-donut zone-donut"><div><b id="trainingZoneTotal">—</b><small>已分级</small></div></div><div id="trainingZoneLegend" class="analytics-legend"></div></div>
+          </article>
+          <article class="panel training-chart-panel heart-range-panel">
+            <div class="panel-head"><div><p class="eyebrow">HEART RESPONSE</p><h2>每次运动心率范围</h2></div><span class="muted">最近 12 次</span></div>
+            <div id="trainingHeartChart" class="heart-range-chart"></div>
+            <p class="method-note">线段表示最低至最高心率，圆点表示运动平均心率；点击一行查看详情。</p>
+          </article>
+        </div>
+        <article class="panel training-records-panel">
+          <div class="panel-head"><div><p class="eyebrow">PERSONAL BESTS</p><h2>当前范围个人纪录</h2></div><span id="trainingRecordsMeta" class="muted">—</span></div>
+          <div id="trainingRecords" class="training-records"></div>
+          <p class="method-note">纪录按当前所选时间范围计算；点击卡片可回看对应运动与完整心率分析。</p>
+        </article>
+        <article class="panel training-calendar-panel">
+          <div class="panel-head"><div><p class="eyebrow">CONSISTENCY</p><h2>训练日历与连续性</h2></div><span id="trainingCalendarMeta" class="muted">近 6 周</span></div>
+          <div class="calendar-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+          <div id="trainingCalendar" class="training-calendar"></div>
+          <div id="trainingRuleInsights" class="training-rule-insights"></div>
+        </article>
+      </section>
+
+      <section id="trainingPlanModule" class="training-plan-panel">
+        <div class="training-plan-head"><div><p class="eyebrow">ADAPTIVE 7-DAY PLAN</p><h2>未来 7 天训练安排</h2><p id="trainingPlanMeta">根据个人运动习惯、恢复与负荷自动组织。</p></div><span id="trainingPlanBadge" class="privacy-pill">正在生成</span></div>
+        <div id="trainingPlanDays" class="training-plan-days"></div>
+        <div class="training-plan-bottom"><div><h3>计划依据</h3><div id="trainingPlanObservations" class="plan-observations"></div></div><div><h3>动态调整规则</h3><div id="trainingPlanRules" class="plan-rules"></div></div></div>
+        <p class="method-note">计划用于训练组织参考，可随主观感受调整；不构成医疗建议或个体化运动处方。</p>
+      </section>
+
+      <section id="trainingAiModule" class="training-ai-panel">
+        <div class="training-ai-head"><div><p class="eyebrow">AI TRAINING LAB</p><h2>AI 多维训练分析</h2><p>按需使用聚合运动、心率、睡眠、HRV 与恢复数据，从不同视角生成分析；不发送 GPS 坐标或逐点心率。</p></div><span class="privacy-pill">Codex · 隐私摘要</span></div>
+        <div class="training-ai-focus" role="group" aria-label="训练分析视角">
+          <button class="active" type="button" data-training-focus="overview">综合评估</button>
+          <button type="button" data-training-focus="structure">训练结构</button>
+          <button type="button" data-training-focus="cardio">心肺与强度</button>
+          <button type="button" data-training-focus="recovery">恢复与负荷</button>
+          <button type="button" data-training-focus="plan">未来 7 天计划</button>
+        </div>
+        <article id="trainingAiAnswer" class="training-ai-answer"><div class="answer-placeholder"><span>✦</span><p>选择一个分析视角，AI 将结合当前范围内的训练和恢复数据生成解读。</p></div></article>
+        <div class="training-ai-actions"><span>结果会按最近同步时间缓存，避免重复分析。</span><button id="trainingAiRefresh" class="button button-primary" type="button">生成综合分析</button></div>
+        <p class="method-note">AI 结论仅供个人训练回顾，不构成医疗判断、伤病预测或运动处方。</p>
+      </section>
+
+      <section id="explorerModule" class="panel module-panel explorer-module">
+        <div class="panel-head"><div><p class="eyebrow">METRIC EXPLORER</p><h2>指标趋势探索</h2></div><span id="explorerCoverage" class="muted">—</span></div>
+        <div class="explorer-controls">
+          <label>主指标<select id="primaryMetric"></select></label>
+          <button id="swapMetrics" class="swap-button" type="button" aria-label="交换指标">⇄</button>
+          <label>对比指标<select id="compareMetric"></select></label>
+        </div>
+        <div id="comparisonChart" class="comparison-chart"></div>
+        <div id="explorerStats" class="explorer-stats"></div>
+        <p class="method-note">两个指标会按日期对齐并分别归一化；用于发现趋势，不代表因果关系。</p>
+      </section>
+
+      <section id="longTermModule" class="panel module-panel long-term-module">
+        <div class="panel-head"><div><p class="eyebrow">LONG-TERM SIGNALS</p><h2>长期趋势追踪</h2></div><span id="longTermMeta" class="muted">近 7 天 vs 此前 28 天</span></div>
+        <div id="longTermSummary" class="long-term-summary"></div>
+        <div id="longTermTrends" class="long-term-trends"></div>
+        <div class="long-term-history"><div><h3>每日恢复历史</h3><span id="longTermHistoryMeta">从今天开始积累</span></div><div id="longTermHistory" class="long-term-history-chart"></div></div>
+        <p class="method-note">对比个人完整日数据；长期变化只用于回顾，不代表疾病、风险或因果关系。</p>
+      </section>
+
+      <section id="weeklyModule" class="module-panel report-module">
+        <div class="report-cover">
+          <div><p class="eyebrow">WEEKLY RECAP</p><h2>本周健康数据周报</h2><p id="reportPeriod">正在整理这一周的数据…</p></div>
+          <div class="report-score"><b id="reportRecovery">—</b><small>恢复参考</small></div>
+        </div>
+        <div id="reportMetrics" class="report-metrics"></div>
+        <div class="report-grid">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">HIGHLIGHTS</p><h2>本周亮点</h2></div></div><div id="reportHighlights" class="report-list"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">WATCH</p><h2>值得留意</h2></div></div><div id="reportConcerns" class="report-list"></div></article>
+          <article class="panel report-action"><div class="panel-head"><div><p class="eyebrow">NEXT WEEK</p><h2>下周建议</h2></div></div><div id="reportRecommendations" class="report-list"></div></article>
+        </div>
+        <div class="report-archive"><div><b>自动归档</b><span id="reportSchedule">每周一 08:10 生成上一周周报</span></div><div id="reportArchiveList" class="report-archive-list"></div></div>
+        <div class="report-foot"><span>每周一早上自动生成并归档</span><button id="refreshReport" class="button button-ghost" type="button">重新生成周报</button></div>
+      </section>
+
+      <section id="backupModule" class="panel module-panel backup-module">
+        <div class="backup-head"><div><p class="eyebrow">DATA PROTECTION</p><h2>健康数据备份</h2><p>每日创建只读快照并立即做数据库完整性和 SHA-256 校验。</p></div><button id="createBackup" class="button button-primary" type="button">立即创建备份</button></div>
+        <div class="backup-status-grid"><div><span>最近备份</span><b id="backupLatest">—</b><small id="backupIntegrity">等待首次自动备份</small></div><div><span>备份数量</span><b id="backupCount">—</b><small>自动保留最近 14 份</small></div><div><span>占用空间</span><b id="backupSize">—</b><small>压缩归档</small></div><div><span>下次计划</span><b>03:40</b><small>Asia/Hong_Kong</small></div></div>
+        <div class="backup-scope"><div><b>包含</b><p id="backupScope">健康数据库、原始指标、运动路线、日报和周报</p></div><div><b>安全排除</b><p id="backupExcluded">OAuth Token、Client Secret 与日志不进入备份</p></div><div><b>恢复保护</b><p id="backupRestore">网页不提供覆盖数据入口，避免误操作</p></div></div>
+        <div id="backupList" class="backup-list"></div>
+      </section>
+
+      <section id="coachModule" class="module-panel coach-module">
+        <div class="coach-intro">
+          <div><p class="eyebrow">PRIVATE AI HEALTH GUIDE</p><h2>健康问题与个性化指导</h2><p>从常见问题开始，结合近 35 天聚合指标分析睡眠、恢复、尿酸管理、控糖、减脂与增肌。手环数据不能替代血尿酸、血糖、糖化血红蛋白或肾功能化验。</p></div>
+          <span class="privacy-pill">只读 · 按需发送</span>
+        </div>
+        <div id="coachFocusGrid" class="coach-focus-grid" aria-label="健康指导主题">
+          <button class="active" type="button" data-coach-topic="general"><span>◇</span><b>综合健康</b><small>睡眠、恢复与关键指标</small></button>
+          <button type="button" data-coach-topic="uric"><span>○</span><b>尿酸管理</b><small>生活方式、痛风与复查</small></button>
+          <button type="button" data-coach-topic="glucose"><span>⌁</span><b>血糖与控糖</b><small>饮食、活动与监测</small></button>
+          <button type="button" data-coach-topic="body"><span>↗</span><b>减脂增肌</b><small>训练、营养与恢复</small></button>
+        </div>
+        <section class="coach-tips-panel">
+          <div class="coach-section-head"><div><p class="eyebrow">DAILY GUIDANCE</p><h3>今日健康 Tips</h3><p id="coachTipsDate">每天自动轮换一组建议</p></div><button id="coachTipsRefresh" type="button">换一组</button></div>
+          <div id="coachTips" class="coach-tip-grid"></div>
+          <p class="coach-source-note">生活方式提示参考 NIH/NIAMS、CDC 与 WHO 公共健康指南；点击任一提示可结合你的数据继续分析。</p>
+        </section>
+        <section class="coach-question-section">
+          <div class="coach-section-head"><div><p class="eyebrow">COMMON QUESTIONS</p><h3 id="coachTopicTitle">综合健康常见问题</h3></div><span>一键带入问题</span></div>
+          <div id="coachQuestions" class="coach-question-grid"></div>
+        </section>
+        <form id="coachForm" class="coach-form"><textarea id="coachQuestion" maxlength="600" placeholder="选择上方问题，或输入你希望结合健康趋势分析的内容。涉及尿酸或血糖时，可补充最近化验值、用药和症状。" required></textarea><button id="coachSubmit" class="button button-primary" type="submit">结合数据分析</button></form>
+        <article id="coachAnswer" class="coach-answer"><div class="answer-placeholder"><span>✦</span><p>选择一个问题，或输入你想了解的内容。</p></div></article>
+        <p class="method-note">AI 输出仅供健康教育和个人趋势管理，不用于诊断或调整药物。急性关节红肿热痛、明显低/高血糖症状或其他身体不适，请及时联系专业医疗人员。</p>
+      </section>
+
+      <section id="assistantModule" class="module-panel assistant-module">
+        <header class="assistant-head">
+          <div><p class="eyebrow">FREE CHAT · IMAGE INPUT</p><h2>自由问答</h2><p>直接输入问题，也可以从手机相册或本地选择一张图片，让 AI 识别、解释或结合问题回答。</p></div>
+          <span class="privacy-pill">临时会话 · 只读隔离</span>
+        </header>
+        <div class="assistant-simple">
+          <div class="assistant-chat">
+            <div class="assistant-chatbar">
+              <div><b>AI 助手</b><small id="assistantStatus">文字和图片仅用于本次回答</small></div>
+              <div class="assistant-chat-actions">
+                <label class="assistant-model-picker" for="assistantModel"><span>模型</span><select id="assistantModel" aria-label="选择 AI 模型"><option value="auto">自动（推荐）</option><option value="gpt-5.6-luna">快速 · Luna</option><option value="gpt-5.6-terra">均衡 · Terra</option><option value="gpt-5.6-sol">深度 · Sol</option></select></label>
+                <label class="health-context-toggle"><input id="assistantHealthContext" type="checkbox"><span></span><b>带入健康摘要</b></label>
+                <button id="assistantClear" type="button">清空</button>
+              </div>
+            </div>
+            <div id="assistantMessages" class="assistant-messages" aria-live="polite"></div>
+            <div id="assistantImagePreview" class="assistant-image-preview hidden">
+              <img id="assistantImageThumb" alt="待发送图片预览">
+              <div><b id="assistantImageName">图片</b><small id="assistantImageMeta">等待发送</small></div>
+              <button id="assistantImageRemove" type="button" aria-label="移除图片">×</button>
+            </div>
+            <form id="assistantForm" class="assistant-composer">
+              <textarea id="assistantInput" maxlength="12000" rows="3" placeholder="输入问题；如果选择了图片，也可以问“这张图里有什么？”"></textarea>
+              <div class="assistant-compose-foot">
+                <div class="assistant-attach-row"><label class="assistant-image-button" for="assistantImage">▧ 选择图片</label><input id="assistantImage" class="hidden" type="file" accept="image/jpeg,image/png,image/webp"><span>JPG、PNG、WEBP · 大图自动压缩</span></div>
+                <button id="assistantSend" class="button button-primary" type="submit">发送</button>
+              </div>
+            </form>
+            <p class="assistant-disclaimer">图片只会作为本次问题的临时输入，回答后立即删除，不进入健康数据库或备份。AI 可能识别错误，请核对重要信息。</p>
+          </div>
+        </div>
+      </section>
+
+      <footer><span>数据由 Google Health API 提供并存储于你的 health-server</span><span>趋势仅供个人健康管理参考，不构成医疗建议</span></footer>
+    </section>
+
+    <div id="workoutOverlay" class="workout-overlay hidden" aria-hidden="true">
+      <section class="workout-drawer" role="dialog" aria-modal="true" aria-labelledby="workoutDetailTitle">
+        <header class="workout-detail-head">
+          <div><p class="eyebrow">WORKOUT DETAIL</p><h2 id="workoutDetailTitle">运动详情</h2><p id="workoutDetailTime">—</p></div>
+          <button id="closeWorkoutDetail" class="detail-close" type="button" aria-label="关闭运动详情">×</button>
+        </header>
+        <div id="workoutDetailBody"></div>
+      </section>
+    </div>
+    <div id="toast" class="toast" role="status"></div>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
