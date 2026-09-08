@@ -1,0 +1,20 @@
+[Unit]
+Description=Synchronize recent Google Health data
+After=network-online.target air-health.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=airhealth
+Group=airhealth
+WorkingDirectory=/opt/air-health
+Environment=PYTHONUNBUFFERED=1
+Environment=HEALTH_DATA_DIR=/var/lib/air-health
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/air-health/app.py sync --days 2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/air-health
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

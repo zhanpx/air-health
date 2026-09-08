@@ -1,0 +1,11 @@
+[Unit]
+Description=Create Air Health backup every night
+
+[Timer]
+OnCalendar=*-*-* 03:40:00 Asia/Hong_Kong
+RandomizedDelaySec=10m
+Persistent=true
+Unit=air-health-backup.service
+
+[Install]
+WantedBy=timers.target

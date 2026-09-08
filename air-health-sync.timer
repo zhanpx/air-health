@@ -1,0 +1,11 @@
+[Unit]
+Description=Synchronize recent Google Health data every 30 minutes
+
+[Timer]
+OnCalendar=*-*-* *:00/30:00
+RandomizedDelaySec=3m
+Persistent=true
+Unit=air-health-sync.service
+
+[Install]
+WantedBy=timers.target

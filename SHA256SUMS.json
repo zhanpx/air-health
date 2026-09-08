@@ -1,0 +1,122 @@
+[
+  {
+    "file": ".gitattributes",
+    "sha256": "3131783d82f971e1a661deab7c0888410a6cdf225968b5a0989816e70a1878c6"
+  },
+  {
+    "file": ".gitignore",
+    "sha256": "f3461a60d7c57ef1e04573640f3a211b129abecd83ed40287090b277fdcdef14"
+  },
+  {
+    "file": "ai_broker.py",
+    "sha256": "2a41c03de00908e0c4d800faeef2f80880cca505a710a9110e5dd6a225937bfd"
+  },
+  {
+    "file": "air-health-ai.service",
+    "sha256": "f6c50eb9501bcd84034bc7af8c4acaad1b2c4d95a9ae80d02329287a817f850c"
+  },
+  {
+    "file": "air-health-backup.service",
+    "sha256": "fdc76bf7e2d37f42ccf76ebfcf02ccd174ab9bfde9de87af00f06c9b520fd175"
+  },
+  {
+    "file": "air-health-backup.timer",
+    "sha256": "17da744aa6e7b68e03b53385e17e67764337fd57601410b448c31d261d4c4182"
+  },
+  {
+    "file": "air-health-daily-brief.service",
+    "sha256": "7c603e0d5a1b8151f7594aff3415806c3ec754b531d8d3ea9f166a6e253fdf8a"
+  },
+  {
+    "file": "air-health-daily-brief.timer",
+    "sha256": "77463dbde458c4de479ae3b662ed0cf03acc0fe8fd6bbfae0423b420aa121f89"
+  },
+  {
+    "file": "air-health-sync.service",
+    "sha256": "827e0ee404a4504daf61a26f03748f915735aec0ddec393e2c0935580c281666"
+  },
+  {
+    "file": "air-health-sync.timer",
+    "sha256": "83ba5ecf970c205e4ac6827411dcba1907e49c1ecfae6e1dfda5628b91d44b73"
+  },
+  {
+    "file": "air-health-tunnel.service",
+    "sha256": "8e899f8fdffb1b9c5f93da1def58f47dc63ed92adff07de44721c0ac3575b29f"
+  },
+  {
+    "file": "air-health-web-gateway.service",
+    "sha256": "4c439a38a40c3f0a8d6da471ad5ddf4c1fe2f8dd0eafff70f8659b9ec67ae695"
+  },
+  {
+    "file": "air-health-weekly-report.service",
+    "sha256": "cc2914b4a2c7f8ab449c52c5978499abf48368b538b9c7142b8be83ea4c6ec1f"
+  },
+  {
+    "file": "air-health-weekly-report.timer",
+    "sha256": "9411b000f870c12c5ce53d839a041bcf11ea26a75b3825c6b0415add7ebebe93"
+  },
+  {
+    "file": "air-health.service",
+    "sha256": "b60d410cebb2478f2cb789326b660480305722eb7e12e8595e68da246957cc0a"
+  },
+  {
+    "file": "app.py",
+    "sha256": "568a491a003f5df5ad724b93ff7725b06bc90236b163d13c7001fa46b8be8949"
+  },
+  {
+    "file": "configure-web.py",
+    "sha256": "84b4bcc31c4ebd7e777d11bf9b83b4c6ec6869731fa8c8606ef5b70f16d2f2c8"
+  },
+  {
+    "file": "docs/deployment-tutorial.pdf",
+    "sha256": "e9debd34a40bcc10bc3cc07441f3dd18a9bbf266ed0680c9b80a9fadd9bade83"
+  },
+  {
+    "file": "docs/FREE_CLOUD.md",
+    "sha256": "2288cd14d10f268694adedc9f9dca9e0c1b4da8c5aa052ae98ba908f95fcc2d3"
+  },
+  {
+    "file": "docs/TUTORIAL.md",
+    "sha256": "94030794cb6531a7814b15729a35d3622fc4f610c7175889d08e3c560f166d2f"
+  },
+  {
+    "file": "install-base.sh",
+    "sha256": "0e72d8d8d758726a66efe48ba667cb0d176aacec779bcca53e52b646568e985f"
+  },
+  {
+    "file": "mcp_server.py",
+    "sha256": "b1524ed7ea67b5128a84f6f86922ce2c12824933d4007d818e3345fce66c8342"
+  },
+  {
+    "file": "README-\u6559\u5b66\u8bf4\u660e.md",
+    "sha256": "9b2758ae086941f7a8d58965e71464db41154c2b0e9ca98bb8e8aa39c6019601"
+  },
+  {
+    "file": "README.md",
+    "sha256": "efa1f5ee7c4b7d2bfbb5e5e659a1ff4dec347bce3113a29a78aca54014dfa577"
+  },
+  {
+    "file": "SECURITY.md",
+    "sha256": "694ce014cc27e2054ba50077142f71d639fdd36b6f0a848960b1d3e9e9768bbd"
+  },
+  {
+    "file": "static/app.css",
+    "sha256": "62eea511a10de786e89dc8ffc35645e60d5fa3ed990a9762e13480da26ff6aed"
+  },
+  {
+    "file": "static/app.js",
+    "sha256": "c27395a2e12eb94b283dbce4007b647eb49bc75a3d5b1386e5d314ea21612efe"
+  },
+  {
+    "file": "static/index.html",
+    "sha256": "2c7bedb19fce02cc25cd0cbfee703e9fbb7f585014d5cd42e75e3b996837d9a9"
+  },
+  {
+    "file": "static/mobile.css",
+    "sha256": "a615bf34b223b0f87cb7575f63290199bd98436f7aae2a8e2284366e63f5b26d"
+  },
+  {
+    "file": "web_gateway.py",
+    "sha256": "6818d72c316f1c68423ad326133b4cd8e42b4af927424ea73959b7a6f32064e8"
+  }
+]

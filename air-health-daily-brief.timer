@@ -1,0 +1,11 @@
+[Unit]
+Description=Generate Air Health brief every morning
+
+[Timer]
+OnCalendar=*-*-* 08:20:00 Asia/Hong_Kong
+RandomizedDelaySec=5m
+Persistent=true
+Unit=air-health-daily-brief.service
+
+[Install]
+WantedBy=timers.target

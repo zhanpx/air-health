@@ -1,0 +1,12 @@
+[Unit]
+Description=Generate Air Health report every Monday morning
+
+[Timer]
+OnCalendar=Mon *-*-* 08:10:00 Asia/Hong_Kong
+RandomizedDelaySec=10m
+Persistent=true
+Unit=air-health-weekly-report.service
+
+[Install]
+WantedBy=timers.target
+

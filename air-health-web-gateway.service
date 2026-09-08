@@ -1,0 +1,27 @@
+[Unit]
+Description=Air Health authenticated web gateway
+Requires=air-health.service
+After=network.target air-health.service
+
+[Service]
+Type=simple
+User=airhealth
+Group=airhealth
+EnvironmentFile=/etc/air-health-web.env
+ExecStart=/usr/bin/python3 /opt/air-health/web_gateway.py
+Restart=on-failure
+RestartSec=3s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
+

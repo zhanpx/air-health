@@ -1,0 +1,21 @@
+[Unit]
+Description=Generate Air Health daily brief
+After=air-health.service air-health-ai.service
+Wants=air-health.service air-health-ai.service
+
+[Service]
+Type=oneshot
+User=airhealth
+Group=airhealth
+WorkingDirectory=/opt/air-health
+Environment=PYTHONUNBUFFERED=1
+Environment=HEALTH_DATA_DIR=/var/lib/air-health
+Environment=AIR_HEALTH_AI_SOCKET=/run/air-health-ai/agent.sock
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/air-health/app.py daily-brief
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/air-health /run/air-health-ai
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

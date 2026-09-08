@@ -1,0 +1,32 @@
+[Unit]
+Description=Air Health privilege-separated Codex analysis broker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=airhealth-ai
+Group=airhealth
+Environment=HOME=/var/lib/air-health-ai
+Environment=CODEX_HOME=/var/lib/air-health-ai/.codex
+Environment=AIR_HEALTH_AI_SOCKET=/run/air-health-ai/agent.sock
+RuntimeDirectory=air-health-ai
+RuntimeDirectoryMode=0770
+UMask=0007
+ExecStart=/usr/bin/python3 /opt/air-health/ai_broker.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/air-health-ai /var/lib/air-health-ai
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

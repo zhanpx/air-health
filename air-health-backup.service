@@ -1,0 +1,20 @@
+[Unit]
+Description=Create and verify Air Health data backup
+After=air-health.service
+Wants=air-health.service
+
+[Service]
+Type=oneshot
+User=airhealth
+Group=airhealth
+WorkingDirectory=/opt/air-health
+Environment=PYTHONUNBUFFERED=1
+Environment=HEALTH_DATA_DIR=/var/lib/air-health
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/air-health/app.py backup
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/air-health
+RestrictAddressFamilies=AF_UNIX
